@@ -1,7 +1,7 @@
 import wx
 import wx.adv # For TaskBarIcon
 import os
-import sys
+import sys # Ensure sys is imported for path adjustments
 import ctypes # For admin check and re-launch
 import datetime
 import threading
@@ -9,14 +9,17 @@ import time # Keep for any direct time usage, though blocker handles its own loo
 import gettext
 
 # --- Language Setup ---
-# Determine locale directory (relative to this gui.py file)
-LOCALE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'locale'))
-if not os.path.isdir(LOCALE_DIR): # Fallback for different execution contexts
-    alt_locale_dir = os.path.abspath(os.path.join(os.getcwd(), 'locale'))
-    if os.path.isdir(alt_locale_dir):
-        LOCALE_DIR = alt_locale_dir
+def get_bundle_dir_gui():
+    """ Returns the base directory for PyInstaller bundle or script directory for normal execution. """
+    if getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'):
+        # Running in a PyInstaller bundle
+        return sys._MEIPASS
     else:
-        LOCALE_DIR = None # No locale directory found
+        # Running in a normal Python environment
+        # Assumes gui.py is in app_blocker, and project root is one level up.
+        return os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+
+GUI_LOCALE_DIR = os.path.join(get_bundle_dir_gui(), 'locale')
 
 # Global `_` function, initialized to default gettext
 _ = gettext.gettext
@@ -24,15 +27,15 @@ _ = gettext.gettext
 def set_language(lang_code='en'):
     """Sets the language for the GUI module."""
     global _
-    if LOCALE_DIR and os.path.isdir(LOCALE_DIR):
+    if os.path.isdir(GUI_LOCALE_DIR):
         try:
-            translation = gettext.translation('messages', localedir=LOCALE_DIR, languages=[lang_code], fallback=True)
+            translation = gettext.translation('messages', localedir=GUI_LOCALE_DIR, languages=[lang_code], fallback=True)
             _ = translation.gettext
         except Exception as e:
             print(f"Failed to set language to {lang_code} in gui.py: {e}. Using fallback gettext.")
             _ = gettext.gettext # Fallback to basic gettext
     else:
-        print(f"Locale directory '{LOCALE_DIR}' not found in gui.py. Using fallback gettext.")
+        print(f"Locale directory '{GUI_LOCALE_DIR}' not found in gui.py. Using fallback gettext.")
         _ = gettext.gettext # Fallback if locale directory isn't found
 
 # Initialize with a default language (e.g., 'en'). 

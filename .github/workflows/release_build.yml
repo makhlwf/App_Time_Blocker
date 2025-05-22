@@ -1,0 +1,68 @@
+name: Build and Release AppBlocker
+
+on:
+  push:
+    branches:
+      - main # Triggers on pushes to the main branch
+    tags:
+      - 'v*' # Also triggers on version tags like v1.0, v0.2.1
+
+jobs:
+  build-windows:
+    name: Build Windows Executable
+    runs-on: windows-latest
+
+    permissions: # Required for softprops/action-gh-release
+      contents: write # To create releases and upload assets
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x' # Use a recent Python 3 version
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt # Assumes requirements.txt will be created
+          pip install pyinstaller
+
+      - name: Build executable with PyInstaller
+        run: |
+          pyinstaller AppBlocker.spec
+
+      - name: Prepare Release Artifact Name
+        id: release_info
+        run: |
+          # For tags, use the tag name. For main branch commits, use short SHA.
+          if [[ "${{ github.ref_type }}" == "tag" ]]; then
+            echo "release_name=AppBlocker ${{ github.ref_name }}" >> $GITHUB_OUTPUT
+            echo "asset_name=AppBlocker-${{ github.ref_name }}.zip" >> $GITHUB_OUTPUT
+            echo "tag_name=${{ github.ref_name }}" >> $GITHUB_OUTPUT
+          else
+            echo "release_name=AppBlocker Nightly ${{ github.sha }}" >> $GITHUB_OUTPUT
+            echo "asset_name=AppBlocker-nightly-${{ github.sha }}.zip" >> $GITHUB_OUTPUT
+            echo "tag_name=nightly-${{ github.sha }}" >> $GITHUB_OUTPUT # Use a unique tag for nightly builds
+          fi
+        shell: bash
+
+
+      - name: Archive build artifact (Windows)
+        run: |
+          Compress-Archive -Path dist/AppBlocker/* -DestinationPath ${{ steps.release_info.outputs.asset_name }}
+        shell: powershell
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2 # Updated to v2
+        with:
+          name: ${{ steps.release_info.outputs.release_name }}
+          tag_name: ${{ steps.release_info.outputs.tag_name }}
+          files: ${{ steps.release_info.outputs.asset_name }}
+          body: |
+            Automated release for AppBlocker.
+            ${{ github.event_name == 'push' && github.ref_type != 'tag' && format('Changes in this nightly build: {0}', github.event.head_commit.message) || '' }}
+          draft: ${{ github.ref_type != 'tag' }} # Draft for nightly builds
+          prerelease: ${{ github.ref_type != 'tag' }} # Prerelease for nightly builds

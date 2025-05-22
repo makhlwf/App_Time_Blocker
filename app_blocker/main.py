@@ -1,31 +1,35 @@
 import wx
-import os # For os.path.exists
+import os 
+import sys # Added for sys.frozen and sys._MEIPASS
 import gettext
 
 # Import configuration loading functions and constants
-from .config import load_config_from_file, TRAY_ICON_PATH # Removed save_config_from_file as it's not used here
+from .config import load_config_from_file, TRAY_ICON_PATH, DEFAULT_LANGUAGE
+
+def get_bundle_dir():
+    """ Returns the base directory for PyInstaller bundle or script directory for normal execution. """
+    if getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'):
+        # Running in a PyInstaller bundle
+        return sys._MEIPASS
+    else:
+        # Running in a normal Python environment
+        # Assumes main.py is in app_blocker, and project root is one level up.
+        return os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+
+MAIN_LOCALE_DIR = os.path.join(get_bundle_dir(), 'locale')
 
 # --- Initial Language Setup ---
 # Load language from config first to set up gettext correctly
 app_config_values = load_config_from_file()
-current_language = app_config_values.get('language', 'en')
-
-# Determine locale directory (relative to this main.py file, then to project root)
-locale_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'locale'))
-if not os.path.isdir(locale_dir): # Fallback if main.py is not in a subdirectory from project root
-    alt_locale_dir = os.path.abspath(os.path.join(os.getcwd(), 'locale'))
-    if os.path.isdir(alt_locale_dir):
-        locale_dir = alt_locale_dir
-    else:
-        print(f"Locale directory not found at {locale_dir} or {alt_locale_dir}. Using fallback gettext.")
-        locale_dir = None
+current_language = app_config_values.get('language', DEFAULT_LANGUAGE)
 
 # Initialize gettext with the loaded language
 try:
-    if locale_dir and os.path.isdir(locale_dir):
-        translation = gettext.translation('messages', localedir=locale_dir, languages=[current_language], fallback=True)
+    if os.path.isdir(MAIN_LOCALE_DIR):
+        translation = gettext.translation('messages', localedir=MAIN_LOCALE_DIR, languages=[current_language], fallback=True)
         _ = translation.gettext
     else: # Fallback if locale directory isn't found
+        print(f"Locale directory not found at {MAIN_LOCALE_DIR}. Using fallback gettext.")
         _ = gettext.gettext
 except Exception as e_gettext:
     print(f"Error setting up gettext in main.py with language '{current_language}': {e_gettext}. Using fallback gettext.")
