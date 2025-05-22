@@ -1,0 +1,5 @@
+blank_issues_enabled: false # Users must use a template
+contact_links:
+  - name: Project README
+    url: ./README.md # Link to your project's README or other documentation
+    about: Please check the README for general information and setup.
