@@ -1,0 +1,173 @@
+# Arabic translation for App Time Blocker v2
+# Copyright (C) 2024 ORGANIZATION
+# This file is distributed under the same license as the App Time Blocker v2 package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2024.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: App Time Blocker v2 1.0\n"
+"POT-Creation-Date: 2025-05-22 20:08+0000\n"
+"PO-Revision-Date: 2024-05-22 20:30+0000\n"
+"Last-Translator: Auto-Agent <agent@example.com>\n"
+"Language-Team: Arabic <ar@example.com>\n"
+"Language: ar\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=6; plural=(n==0 ? 0 : n==1 ? 1 : n==2 ? 2 : n%100>=3 && n%100<=10 ? 3 : n%100>=11 ? 4 : 5);\n"
+"Generated-By: pygettext.py 1.5\n"
+
+
+#: app_blocker/gui.py:72
+msgid "Show/Hide App"
+msgstr "AR: Show/Hide App"
+
+#: app_blocker/gui.py:74
+msgid "Exit Blocker"
+msgstr "AR: Exit Blocker"
+
+#: app_blocker/gui.py:125
+msgid "Idle. Configure and start monitoring."
+msgstr "AR: Idle. Configure and start monitoring."
+
+#: app_blocker/gui.py:127
+msgid "Configuration loaded from {config_path}"
+msgstr "AR: Configuration loaded from {config_path}"
+
+#: app_blocker/gui.py:129
+msgid "No prior configuration found. Using defaults."
+msgstr "AR: No prior configuration found. Using defaults."
+
+#: app_blocker/gui.py:142
+msgid "Admin check: ctypes.windll.shell32 not available. Assuming not admin."
+msgstr "AR: Admin check: ctypes.windll.shell32 not available. Assuming not admin."
+
+#: app_blocker/gui.py:145
+msgid "Error checking admin status: {error}"
+msgstr "AR: Error checking admin status: {error}"
+
+#: app_blocker/gui.py:150
+msgid ""
+"This application may not function correctly without Administrator privileges (e.g., terminating other admin-level apps).\n"
+"\n"
+"Would you like to try restarting it as Administrator?"
+msgstr ""
+"AR: This application may not function correctly without Administrator privileges (e.g., terminating other admin-level apps).\n"
+"AR: \n"
+"AR: Would you like to try restarting it as Administrator?"
+
+#: app_blocker/gui.py:153
+msgid "Administrator Privileges Recommended"
+msgstr "AR: Administrator Privileges Recommended"
+
+#: app_blocker/gui.py:166
+msgid "Failed to restart as admin: {error}"
+msgstr "AR: Failed to restart as admin: {error}"
+
+#: app_blocker/gui.py:166 app_blocker/gui.py:308
+msgid "Error"
+msgstr "AR: Error"
+
+#: app_blocker/gui.py:167
+msgid "Admin restart failed: {error}"
+msgstr "AR: Admin restart failed: {error}"
+
+#: app_blocker/gui.py:174
+msgid "Application Settings"
+msgstr "AR: Application Settings"
+
+#: app_blocker/gui.py:178
+msgid "Application to Block:"
+msgstr "AR: Application to Block:"
+
+#: app_blocker/gui.py:183
+msgid "Browse..."
+msgstr "AR: Browse..."
+
+#: app_blocker/gui.py:187
+msgid "Block After (HH:MM):"
+msgstr "AR: Block After (HH:MM):"
+
+#: app_blocker/gui.py:201
+msgid "Controls"
+msgstr "AR: Controls"
+
+#: app_blocker/gui.py:203
+msgid "Start Monitoring"
+msgstr "AR: Start Monitoring"
+
+#: app_blocker/gui.py:206
+msgid "Stop Monitoring"
+msgstr "AR: Stop Monitoring"
+
+#: app_blocker/gui.py:212
+msgid "Status Log"
+msgstr "AR: Status Log"
+
+#: app_blocker/gui.py:234
+msgid "Stop monitoring before changing settings."
+msgstr "AR: Stop monitoring before changing settings."
+
+#: app_blocker/gui.py:234
+msgid "Warning"
+msgstr "AR: Warning"
+
+#: app_blocker/gui.py:238
+msgid "Executable files (*.exe)|*.exe|All files (*.*)|*.*"
+msgstr "AR: Executable files (*.exe)|*.exe|All files (*.*)|*.*"
+
+#: app_blocker/gui.py:238
+msgid "Select Application"
+msgstr "AR: Select Application"
+
+#: app_blocker/gui.py:244
+msgid "Selected application: {app_path}"
+msgstr "AR: Selected application: {app_path}"
+
+#: app_blocker/gui.py:270
+msgid "Configuration saved."
+msgstr "AR: Configuration saved."
+
+#: app_blocker/gui.py:299
+msgid "Monitoring stopped unexpectedly by the monitoring thread."
+msgstr "AR: Monitoring stopped unexpectedly by the monitoring thread."
+
+#: app_blocker/gui.py:308
+msgid "Please select an application to block."
+msgstr "AR: Please select an application to block."
+
+#: app_blocker/gui.py:321
+msgid "N/A"
+msgstr "AR: N/A"
+
+#: app_blocker/gui.py:322
+msgid "Monitoring started for {app_name}. Block after {hour:02d}:{minute:02d}."
+msgstr "AR: Monitoring started for {app_name}. Block after {hour:02d}:{minute:02d}."
+
+#: app_blocker/gui.py:346
+msgid "Stop monitoring signal sent..."
+msgstr "AR: Stop monitoring signal sent..."
+
+#: app_blocker/gui.py:353
+msgid "Monitoring is not active or already stopping."
+msgstr "AR: Monitoring is not active or already stopping."
+
+#: app_blocker/gui.py:378
+msgid "Exiting application..."
+msgstr "AR: Exiting application..."
+
+#: app_blocker/gui.py:382
+msgid "Waiting for monitor thread to finish..."
+msgstr "AR: Waiting for monitor thread to finish..."
+
+#: app_blocker/gui.py:385
+msgid "Monitor thread did not finish in time."
+msgstr "AR: Monitor thread did not finish in time."
+
+#: app_blocker/main.py:28
+msgid "App Time Blocker v2"
+msgstr "AR: App Time Blocker v2"
+
+#: app_blocker/main.py:29
+msgid "App Time Blocker Tray"
+msgstr "AR: App Time Blocker Tray"

@@ -8,58 +8,62 @@ import threading
 import time # Keep for any direct time usage, though blocker handles its own loop timing
 import gettext
 
-# Attempt to set up translation for English.
-# The actual language loaded might depend on system settings or future enhancements.
-# For now, we'll ensure 'en' can be loaded if present.
-try:
-    # Correct path to the locale directory relative to gui.py
-    # Assuming gui.py is in app_blocker, and locale is at the project root.
-    locale_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'locale'))
-    if not os.path.isdir(locale_dir):
-        # Fallback if running from a different structure (e.g. root in some test environments)
-        # This might happen if current working directory is the project root
-        alt_locale_dir = os.path.abspath(os.path.join(os.getcwd(), 'locale'))
-        if os.path.isdir(alt_locale_dir):
-            locale_dir = alt_locale_dir
-        else: # If locale dir is not found, create a dummy gettext
-            print(f"Locale directory not found at {locale_dir} or {alt_locale_dir}. Using fallback gettext.")
-            locale_dir = None
+# --- Language Setup ---
+# Determine locale directory (relative to this gui.py file)
+LOCALE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'locale'))
+if not os.path.isdir(LOCALE_DIR): # Fallback for different execution contexts
+    alt_locale_dir = os.path.abspath(os.path.join(os.getcwd(), 'locale'))
+    if os.path.isdir(alt_locale_dir):
+        LOCALE_DIR = alt_locale_dir
+    else:
+        LOCALE_DIR = None # No locale directory found
 
-    if locale_dir and os.path.isdir(locale_dir):
-        # Using 'messages' as the domain, which should match the .mo file name.
-        translation = gettext.translation('messages', localedir=locale_dir, languages=['en'], fallback=True)
-        _ = translation.gettext
-    else: # Fallback if locale directory isn't found
-        _ = gettext.gettext
-except Exception as e:
-    print(f"Error setting up gettext: {e}. Using fallback gettext.")
-    _ = gettext.gettext # Fallback
+# Global `_` function, initialized to default gettext
+_ = gettext.gettext
+
+def set_language(lang_code='en'):
+    """Sets the language for the GUI module."""
+    global _
+    if LOCALE_DIR and os.path.isdir(LOCALE_DIR):
+        try:
+            translation = gettext.translation('messages', localedir=LOCALE_DIR, languages=[lang_code], fallback=True)
+            _ = translation.gettext
+        except Exception as e:
+            print(f"Failed to set language to {lang_code} in gui.py: {e}. Using fallback gettext.")
+            _ = gettext.gettext # Fallback to basic gettext
+    else:
+        print(f"Locale directory '{LOCALE_DIR}' not found in gui.py. Using fallback gettext.")
+        _ = gettext.gettext # Fallback if locale directory isn't found
+
+# Initialize with a default language (e.g., 'en'). 
+# AppBlockerFrame will call this again with the configured language.
+set_language() 
 
 # Import from our new modules
 from .config import (
-    CONFIG_FILE_PATH, TRAY_ICON_PATH, # TRAY_TOOLTIP removed, will be handled via parameter
+    CONFIG_FILE_PATH, TRAY_ICON_PATH,
     load_config_from_file, save_config_to_file
 )
 from .blocker import monitor_loop # Import the refactored monitor_loop
 
 class AppTaskBarIcon(wx.adv.TaskBarIcon):
-    def __init__(self, frame, tooltip_text): # Added tooltip_text
+    def __init__(self, frame, tooltip_text): 
         super(AppTaskBarIcon, self).__init__()
         self.frame = frame
 
         # Set Icon
         try:
-            if os.path.exists(TRAY_ICON_PATH): # TRAY_ICON_PATH from config
+            if os.path.exists(TRAY_ICON_PATH): 
                 icon = wx.Icon(TRAY_ICON_PATH, wx.BITMAP_TYPE_PNG)
             else: 
                 icon = wx.Icon(wx.STOCK_ICON_APPLICATION)
-            self.SetIcon(icon, tooltip_text) # Use the passed tooltip_text
+            self.SetIcon(icon, tooltip_text) 
         except Exception as e:
             print(f"Error setting tray icon: {e}. Using default.")
             try:
                 std_icon = wx.Icon()
                 std_icon.CopyFromBitmap(wx.ArtProvider.GetBitmap(wx.ART_INFORMATION, wx.ART_TOOLBAR, (16,16)))
-                self.SetIcon(std_icon, tooltip_text) # Use the passed tooltip_text
+                self.SetIcon(std_icon, tooltip_text) 
             except Exception as e_std:
                 print(f"Error setting standard tray icon: {e_std}")
 
@@ -87,20 +91,25 @@ class AppTaskBarIcon(wx.adv.TaskBarIcon):
         self.Unbind(wx.adv.EVT_TASKBAR_LEFT_DCLICK)
         self.Unbind(wx.EVT_MENU, id=wx.ID_OPEN)
         self.Unbind(wx.EVT_MENU, id=wx.ID_EXIT)
-        if not self.IsBeingDeleted(): # Check if not already being deleted
+        if not self.IsBeingDeleted(): 
             self.Destroy()
 
 
 class AppBlockerFrame(wx.Frame):
-    def __init__(self, parent, title, tray_tooltip_text): # Add tray_tooltip_text
-        super(AppBlockerFrame, self).__init__(parent, title=title, size=(600, 650))
+    def __init__(self, parent, title, tray_tooltip_text, current_lang='en'): # Added current_lang
+        
+        self.current_lang = current_lang # Store language
+        set_language(self.current_lang) # Set language for GUI module
 
-        # Configuration attributes (will be populated by _load_initial_config)
+        super(AppBlockerFrame, self).__init__(parent, title=title, size=(600, 700)) # Increased height for lang menu
+
+        # Configuration attributes
         self.app_path_val = ""
         self.end_hour_val = 17
         self.end_minute_val = 0
         self.block_activated_today = False
         self.date_block_activated = None
+        # self.current_lang is already set
 
         # Monitoring state
         self.monitoring_active = False
@@ -108,13 +117,15 @@ class AppBlockerFrame(wx.Frame):
         self.stop_event = threading.Event()
 
         self.taskBarIcon = None
-        self.tray_tooltip_text = tray_tooltip_text # Store it
+        self.tray_tooltip_text = tray_tooltip_text 
 
-        self._load_initial_config()
-        self.InitUI() # Calls setup_taskbar_icon internally, so tray_tooltip_text must be set before
+        self._load_initial_config() # This will load language too, and self.current_lang will be updated
+                                    # then we must re-set the language for the GUI
+        set_language(self.current_lang) # Re-set language based on loaded config
+
+        self.InitUI() 
         self.Centre()
         self.Show()
-        # self.setup_taskbar_icon() # Called within InitUI or explicitly if needed after tray_tooltip_text is set.
 
         self.Bind(wx.EVT_CLOSE, self.on_minimize_to_tray)
         self.Bind(wx.EVT_ICONIZE, self.on_iconize_to_tray)

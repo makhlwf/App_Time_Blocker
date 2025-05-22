@@ -2,9 +2,17 @@ import wx
 import os # For os.path.exists
 import gettext
 
-# Assuming main.py is in app_blocker, and locale is at the project root.
+# Import configuration loading functions and constants
+from .config import load_config_from_file, TRAY_ICON_PATH # Removed save_config_from_file as it's not used here
+
+# --- Initial Language Setup ---
+# Load language from config first to set up gettext correctly
+app_config_values = load_config_from_file()
+current_language = app_config_values.get('language', 'en')
+
+# Determine locale directory (relative to this main.py file, then to project root)
 locale_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'locale'))
-if not os.path.isdir(locale_dir):
+if not os.path.isdir(locale_dir): # Fallback if main.py is not in a subdirectory from project root
     alt_locale_dir = os.path.abspath(os.path.join(os.getcwd(), 'locale'))
     if os.path.isdir(alt_locale_dir):
         locale_dir = alt_locale_dir
@@ -12,25 +20,27 @@ if not os.path.isdir(locale_dir):
         print(f"Locale directory not found at {locale_dir} or {alt_locale_dir}. Using fallback gettext.")
         locale_dir = None
 
-if locale_dir and os.path.isdir(locale_dir):
-    translation = gettext.translation('messages', localedir=locale_dir, languages=['en'], fallback=True)
-    _ = translation.gettext
-else:
-    _ = gettext.gettext
+# Initialize gettext with the loaded language
+try:
+    if locale_dir and os.path.isdir(locale_dir):
+        translation = gettext.translation('messages', localedir=locale_dir, languages=[current_language], fallback=True)
+        _ = translation.gettext
+    else: # Fallback if locale directory isn't found
+        _ = gettext.gettext
+except Exception as e_gettext:
+    print(f"Error setting up gettext in main.py with language '{current_language}': {e_gettext}. Using fallback gettext.")
+    _ = gettext.gettext # Fallback
 
-
-# Import the main frame from the gui module
+# Now import GUI components which might use _ in their definitions or need the language
 from .gui import AppBlockerFrame
-# Import TRAY_ICON_PATH for the dummy icon creation (config might be better place for TRAY_ICON_PATH itself)
-from .config import TRAY_ICON_PATH 
 
 
-APP_NAME = _("App Time Blocker v2") # For window title - updated from "App Time Blocker v2"
-TRAY_TOOLTIP_TEXT = _('App Time Blocker Tray') # For taskbar icon tooltip
+# Define translatable strings used in main.py
+APP_NAME = _("App Time Blocker v2")
+TRAY_TOOLTIP_TEXT = _('App Time Blocker Tray')
 
 if __name__ == '__main__':
     # Create a dummy icon.png if it doesn't exist for testing tray icon
-    # This logic might be moved to gui.py later or a utility module
     if not os.path.exists(TRAY_ICON_PATH): # TRAY_ICON_PATH is imported from config
         try:
             from PIL import Image, ImageDraw # Pillow is an external dependency
@@ -45,6 +55,11 @@ if __name__ == '__main__':
             print(f"Error creating dummy icon: {e_img}")
 
     app = wx.App(False)
-    # Pass the translated title and tooltip text to the frame
-    frame = AppBlockerFrame(None, title=APP_NAME, tray_tooltip_text=TRAY_TOOLTIP_TEXT) 
+    # Pass the translated title, tooltip text, and current_language to the frame
+    frame = AppBlockerFrame(
+        None, 
+        title=APP_NAME, 
+        tray_tooltip_text=TRAY_TOOLTIP_TEXT,
+        current_lang=current_language # Pass loaded language
+    ) 
     app.MainLoop()
