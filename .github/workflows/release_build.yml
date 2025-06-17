@@ -6,7 +6,7 @@ on:
       - main
     tags:
       - 'v*'
-  workflow_dispatch:  # Manual trigger support
+  workflow_dispatch:
 
 jobs:
   build-windows:
@@ -14,7 +14,7 @@ jobs:
     runs-on: windows-latest
 
     permissions:
-      contents: write
+      contents: write  # Required for creating releases
 
     steps:
       - name: Checkout code
@@ -35,8 +35,29 @@ jobs:
         run: |
           pyinstaller --onefile app_blocker/main.py --name AppBlocker
 
-      - name: Upload executable
-        uses: actions/upload-artifact@v4
+      - name: Get current date
+        id: date
+        run: echo "release_date=$(date +'%Y-%m-%d')" >> $GITHUB_OUTPUT
+
+      - name: Generate changelog from last tag or commit
+        id: changelog
+        run: |
+          LAST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
+          if [ -n "$LAST_TAG" ]; then
+            git log "$LAST_TAG"..HEAD --pretty=format:"- %s" > changes.txt
+          else
+            git log -n 10 --pretty=format:"- %s" > changes.txt
+          fi
+          echo "changelog<<EOF" >> $GITHUB_OUTPUT
+          cat changes.txt >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Create GitHub Release and upload EXE
+        uses: softprops/action-gh-release@v2
         with:
-          name: AppBlocker
-          path: dist/AppBlocker.exe
+          name: ${{ steps.date.outputs.release_date }}
+          tag_name: release-${{ steps.date.outputs.release_date }}
+          body: ${{ steps.changelog.outputs.changelog }}
+          files: dist/AppBlocker.exe
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
