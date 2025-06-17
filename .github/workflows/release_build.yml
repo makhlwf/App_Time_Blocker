@@ -1,12 +1,7 @@
 name: Build and Release AppBlocker
 
 on:
-  push:
-    branches:
-      - main
-    tags:
-      - 'v*'
-  workflow_dispatch:
+  workflow_dispatch: # Manual trigger only
 
 jobs:
   build-windows:
@@ -19,6 +14,8 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Important for getting full history
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -40,20 +37,31 @@ jobs:
         shell: bash
         run: echo "release_date=$(date +'%Y-%m-%d')" >> "$GITHUB_OUTPUT"
 
-      - name: Generate changelog from last tag or commit
+      - name: Generate full changelog and contributors
         id: changelog
         shell: bash
         run: |
           LAST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
           if [ -n "$LAST_TAG" ]; then
-            CHANGELOG=$(git log "$LAST_TAG"..HEAD --pretty=format:"- %s")
+            RANGE="$LAST_TAG..HEAD"
+            TAG_TITLE="Commits since \`$LAST_TAG\`"
           else
-            CHANGELOG=$(git log -n 10 --pretty=format:"- %s")
+            RANGE="HEAD"
+            TAG_TITLE="Recent Commits"
           fi
+
+          echo "### 📦 Auto-generated Changelog" > changelog.md
+          echo "These changes were automatically generated based on commits." >> changelog.md
+          echo "" >> changelog.md
+          echo "#### 🔨 $TAG_TITLE" >> changelog.md
+          git log $RANGE --pretty=format:"- %h - %s (by %an)" >> changelog.md
+          echo "" >> changelog.md
+          echo "#### 👥 Thanks to Contributors" >> changelog.md
+          git log $RANGE --format='%an' | sort -u | sed 's/^/- /' >> changelog.md
 
           {
             echo "changelog<<EOF"
-            echo "$CHANGELOG"
+            cat changelog.md
             echo "EOF"
           } >> "$GITHUB_OUTPUT"
 
